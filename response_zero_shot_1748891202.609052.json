@@ -1,0 +1,62 @@
+{
+  "strategy": "zero_shot",
+  "prompt_prefix": "DROP TABLE IF EXISTS WorkSession;\nDROP TABLE IF EXISTS PersonProject;\nDROP TABLE IF EXISTS ProjectTag;\nDROP TABLE IF EXISTS Tag;\nDROP TABLE IF EXISTS Project;\nDROP TABLE IF EXISTS Person;\n\nCREATE TABLE Person (\n    id BIGINT PRIMARY KEY,\n    firstName VARCHAR,\n    lastName VARCHAR,\n    email VARCHAR UNIQUE,\n    hashedPassword VARCHAR\n);\n\nCREATE TABLE Project (\n    id BIGINT PRIMARY KEY,\n    projectTitle VARCHAR,\n    ownerId BIGINT,\n    addCode CHAR,\n    FOREIGN KEY (ownerId) REFERENCES Person(id)\n);\n\nCREATE TABLE Tag (\n    id BIGINT PRIMARY KEY,\n    value VARCHAR UNIQUE\n);\n\nCREATE TABLE ProjectTag (\n    projectId BIGINT,\n    tagId BIGINT,\n    PRIMARY KEY (projectId, tagId),\n    FOREIGN KEY (projectId) REFERENCES Project(id),\n    FOREIGN KEY (tagId) REFERENCES Tag(id)\n);\n\nCREATE TABLE PersonProject (\n    personId BIGINT,\n    projectId BIGINT,\n    role TEXT CHECK(role IN ('Owner', 'Contributor', 'Viewer')),\n    hourlyRate BIGINT,\n    PRIMARY KEY (personId, projectId),\n    FOREIGN KEY (personId) REFERENCES Person(id),\n    FOREIGN KEY (projectId) REFERENCES Project(id)\n);\n\nCREATE TABLE WorkSession (\n    id BIGINT PRIMARY KEY,\n    startTime DATETIME,\n    endTime DATETIME,\n    projectId BIGINT,\n    personId BIGINT,\n    FOREIGN KEY (projectId) REFERENCES Project(id),\n    FOREIGN KEY (personId) REFERENCES Person(id)\n); Give me a sqlite select statement that answers the question. Only respond with sqlite syntax. If there is an error do not expalin it!",
+  "questionResults": [
+    {
+      "question": "How many hours has Alice Johnson worked this week?",
+      "sql": "\nSELECT \n    IFNULL(SUM((JULIANDAY(endTime) - JULIANDAY(startTime)) * 24), 0) AS total_hours\nFROM \n    WorkSession \nJOIN \n    Person ON WorkSession.personId = Person.id\nWHERE \n    firstName = 'Alice' \n    AND lastName = 'Johnson'\n    AND DATE(startTime) >= DATE('now', 'weekday 0', '-7 days')\n    AND DATE(endTime) <= DATE('now', 'weekday 0');\n",
+      "queryRawResponse": "[(2.0000000037252903,)]",
+      "friendlyResponse": "Alice Johnson has worked 2 hours this week.",
+      "error": "None"
+    },
+    {
+      "question": "Which projects involve security?",
+      "sql": "\nSELECT Project.id, Project.projectTitle\nFROM Project\nJOIN ProjectTag ON Project.id = ProjectTag.projectId\nJOIN Tag ON ProjectTag.tagId = Tag.id\nWHERE Tag.value = 'security';\n",
+      "queryRawResponse": "[]",
+      "friendlyResponse": "I'm sorry, but I need more context to provide a relevant answer regarding specific security projects. Could you please clarify which organization or field you're referring to?",
+      "error": "None"
+    },
+    {
+      "question": "What is the total cost of the Data Migration project?",
+      "sql": "\nSELECT SUM((JULIANDAY(endTime) - JULIANDAY(startTime)) * 24 * hourlyRate) AS totalCost\nFROM WorkSession\nJOIN PersonProject ON WorkSession.personId = PersonProject.personId AND WorkSession.projectId = PersonProject.projectId\nJOIN Project ON WorkSession.projectId = Project.id\nWHERE Project.projectTitle = 'Data Migration';\n",
+      "queryRawResponse": "[(347.49999962747097,)]",
+      "friendlyResponse": "The total cost of the Data Migration project is approximately $347.50.",
+      "error": "None"
+    },
+    {
+      "question": "Who has contributed to more than one project?",
+      "sql": "\nSELECT p.firstName, p.lastName, p.id \nFROM Person p\nJOIN PersonProject pp ON p.id = pp.personId\nWHERE pp.role = 'Contributor'\nGROUP BY p.id\nHAVING COUNT(DISTINCT pp.projectId) > 1;\n",
+      "queryRawResponse": "[('Alice', 'Johnson', 1), ('Bob', 'Lee', 2), ('Clara', 'Nguyen', 3), ('Derek', 'Stone', 4), ('Emily', 'Clark', 5)]",
+      "friendlyResponse": "Bob, Clara, Derek, and Emily have contributed to more than one project.",
+      "error": "None"
+    },
+    {
+      "question": "What tags are associated with the Mobile App Launch project?",
+      "sql": "\nSELECT Tag.value\nFROM Tag\nJOIN ProjectTag ON Tag.id = ProjectTag.tagId\nJOIN Project ON ProjectTag.projectId = Project.id\nWHERE Project.projectTitle = 'Mobile App Launch';\n",
+      "queryRawResponse": "[('Endpoints',)]",
+      "friendlyResponse": "Endpoints",
+      "error": "None"
+    },
+    {
+      "question": "What are the names of all projects owned by Bob Lee?",
+      "sql": "\nSELECT Project.projectTitle\nFROM Project\nJOIN Person ON Project.ownerId = Person.id\nWHERE Person.firstName = 'Bob' AND Person.lastName = 'Lee';\n",
+      "queryRawResponse": "[('Mobile App Launch',)]",
+      "friendlyResponse": "Sure! The project owned by Bob Lee is \"Mobile App Launch.\"",
+      "error": "None"
+    },
+    {
+      "question": "Who worked on Campus Kiosk App on May 31?",
+      "sql": "\nSELECT DISTINCT p.firstName, p.lastName\nFROM WorkSession ws\nJOIN Project proj ON ws.projectId = proj.id\nJOIN Person p ON ws.personId = p.id\nWHERE proj.projectTitle = 'Campus Kiosk App' \n  AND DATE(ws.startTime) = '2023-05-31';\n",
+      "queryRawResponse": "[]",
+      "friendlyResponse": "I'm sorry, I don't have that information.",
+      "error": "None"
+    },
+    {
+      "question": "Which contributors have an hourly rate over 90?",
+      "sql": "\nSELECT p.firstName, p.lastName, pp.hourlyRate\nFROM Person p\nJOIN PersonProject pp ON p.id = pp.personId\nWHERE pp.role = 'Contributor' AND pp.hourlyRate > 90;\n",
+      "queryRawResponse": "[('Alice', 'Johnson', 100), ('Emily', 'Clark', 95), ('Frank', 'Lopez', 100), ('Alice', 'Johnson', 110), ('Emily', 'Clark', 93), ('Grace', 'Kim', 100)]",
+      "friendlyResponse": "Sure! Alice Johnson, Emily Clark, Frank Lopez, and Grace Kim all have hourly rates over 90.",
+      "error": "None"
+    }
+  ]
+}

@@ -1,0 +1,62 @@
+{
+  "strategy": "few_shot",
+  "prompt_prefix": "DROP TABLE IF EXISTS WorkSession;\nDROP TABLE IF EXISTS PersonProject;\nDROP TABLE IF EXISTS ProjectTag;\nDROP TABLE IF EXISTS Tag;\nDROP TABLE IF EXISTS Project;\nDROP TABLE IF EXISTS Person;\n\nCREATE TABLE Person (\n    id BIGINT PRIMARY KEY,\n    firstName VARCHAR,\n    lastName VARCHAR,\n    email VARCHAR UNIQUE,\n    hashedPassword VARCHAR\n);\n\nCREATE TABLE Project (\n    id BIGINT PRIMARY KEY,\n    projectTitle VARCHAR,\n    ownerId BIGINT,\n    addCode CHAR,\n    FOREIGN KEY (ownerId) REFERENCES Person(id)\n);\n\nCREATE TABLE Tag (\n    id BIGINT PRIMARY KEY,\n    value VARCHAR UNIQUE\n);\n\nCREATE TABLE ProjectTag (\n    projectId BIGINT,\n    tagId BIGINT,\n    PRIMARY KEY (projectId, tagId),\n    FOREIGN KEY (projectId) REFERENCES Project(id),\n    FOREIGN KEY (tagId) REFERENCES Tag(id)\n);\n\nCREATE TABLE PersonProject (\n    personId BIGINT,\n    projectId BIGINT,\n    role TEXT CHECK(role IN ('Owner', 'Contributor', 'Viewer')),\n    hourlyRate BIGINT,\n    PRIMARY KEY (personId, projectId),\n    FOREIGN KEY (personId) REFERENCES Person(id),\n    FOREIGN KEY (projectId) REFERENCES Project(id)\n);\n\nCREATE TABLE WorkSession (\n    id BIGINT PRIMARY KEY,\n    startTime DATETIME,\n    endTime DATETIME,\n    projectId BIGINT,\n    personId BIGINT,\n    FOREIGN KEY (projectId) REFERENCES Project(id),\n    FOREIGN KEY (personId) REFERENCES Person(id)\n);\nQ: What tags are associated with the Mobile App Launch project?\nA:\nSELECT Tag.value FROM Tag\nJOIN ProjectTag ON Tag.id = ProjectTag.tagId\nJOIN Project ON Project.id = ProjectTag.projectId\nWHERE Project.projectTitle = 'Mobile App Launch';\n Give me a sqlite select statement that answers the question. Only respond with sqlite syntax. If there is an error do not expalin it!",
+  "questionResults": [
+    {
+      "question": "How many hours has Alice Johnson worked this week?",
+      "sql": "\nSELECT SUM((JULIANDAY(WorkSession.endTime) - JULIANDAY(WorkSession.startTime)) * 24) AS hours_worked\nFROM WorkSession\nJOIN Person ON WorkSession.personId = Person.id\nWHERE Person.firstName = 'Alice' AND Person.lastName = 'Johnson'\nAND WorkSession.startTime >= DATETIME('now', 'start of day', '-6 days');\n",
+      "queryRawResponse": "[(6.50000000372529,)]",
+      "friendlyResponse": "Alice Johnson worked approximately 6.5 hours this week.",
+      "error": "None"
+    },
+    {
+      "question": "Which projects involve security?",
+      "sql": "\nSELECT Project.projectTitle FROM Project\nJOIN ProjectTag ON Project.id = ProjectTag.projectId\nJOIN Tag ON Tag.id = ProjectTag.tagId\nWHERE Tag.value = 'Security';\n",
+      "queryRawResponse": "[('AI Chatbot',), ('Password Reset System',), ('E-Commerce Backend',), ('Payment Gateway',)]",
+      "friendlyResponse": "Sure! The projects involving security are the AI Chatbot, Password Reset System, E-Commerce Backend, and Payment Gateway.",
+      "error": "None"
+    },
+    {
+      "question": "What is the total cost of the Data Migration project?",
+      "sql": "\nSELECT SUM((JulianDay(endTime) - JulianDay(startTime)) * 24 * hourlyRate) AS total_cost\nFROM WorkSession\nJOIN PersonProject ON WorkSession.personId = PersonProject.personId AND WorkSession.projectId = PersonProject.projectId\nJOIN Project ON WorkSession.projectId = Project.id\nWHERE Project.projectTitle = 'Data Migration';\n",
+      "queryRawResponse": "[(347.49999962747097,)]",
+      "friendlyResponse": "The total cost of the Data Migration project is approximately $347.50.",
+      "error": "None"
+    },
+    {
+      "question": "Who has contributed to more than one project?",
+      "sql": "\nSELECT Person.firstName, Person.lastName, Person.email\nFROM Person\nJOIN PersonProject ON Person.id = PersonProject.personId\nWHERE PersonProject.role = 'Contributor'\nGROUP BY Person.id\nHAVING COUNT(DISTINCT PersonProject.projectId) > 1;\n",
+      "queryRawResponse": "[('Alice', 'Johnson', 'alice@pmtool.com'), ('Bob', 'Lee', 'bob@pmtool.com'), ('Clara', 'Nguyen', 'clara@pmtool.com'), ('Derek', 'Stone', 'derek@pmtool.com'), ('Emily', 'Clark', 'emily@pmtool.com')]",
+      "friendlyResponse": "Sure! Alice, Bob, Clara, Derek, and Emily have all contributed to more than one project.",
+      "error": "None"
+    },
+    {
+      "question": "What tags are associated with the Mobile App Launch project?",
+      "sql": "\nSELECT Tag.value FROM Tag\nJOIN ProjectTag ON Tag.id = ProjectTag.tagId\nJOIN Project ON Project.id = ProjectTag.projectId\nWHERE Project.projectTitle = 'Mobile App Launch';\n",
+      "queryRawResponse": "[('Endpoints',)]",
+      "friendlyResponse": "The tags associated with the Mobile App Launch project are: Endpoints.",
+      "error": "None"
+    },
+    {
+      "question": "What are the names of all projects owned by Bob Lee?",
+      "sql": "\nSELECT Project.projectTitle FROM Project\nJOIN Person ON Project.ownerId = Person.id\nWHERE Person.firstName = 'Bob' AND Person.lastName = 'Lee';\n",
+      "queryRawResponse": "[('Mobile App Launch',)]",
+      "friendlyResponse": "Bob Lee owns the project \"Mobile App Launch.\"",
+      "error": "None"
+    },
+    {
+      "question": "Who worked on Campus Kiosk App on May 31?",
+      "sql": "\nSELECT Person.firstName, Person.lastName FROM Person\nJOIN WorkSession ON Person.id = WorkSession.personId\nJOIN Project ON Project.id = WorkSession.projectId\nWHERE Project.projectTitle = 'Campus Kiosk App'\nAND DATE(WorkSession.startTime) = '2023-05-31';\n",
+      "queryRawResponse": "[]",
+      "friendlyResponse": "I'm sorry, but I don't have access to that information.",
+      "error": "None"
+    },
+    {
+      "question": "Which contributors have an hourly rate over 90?",
+      "sql": "\nSELECT Person.firstName, Person.lastName FROM Person\nJOIN PersonProject ON Person.id = PersonProject.personId\nWHERE PersonProject.role = 'Contributor' AND PersonProject.hourlyRate > 90;\n",
+      "queryRawResponse": "[('Alice', 'Johnson'), ('Emily', 'Clark'), ('Frank', 'Lopez'), ('Alice', 'Johnson'), ('Emily', 'Clark'), ('Grace', 'Kim')]",
+      "friendlyResponse": "Alice Johnson, Emily Clark, Frank Lopez, and Grace Kim have hourly rates over 90.",
+      "error": "None"
+    }
+  ]
+}
