@@ -1,0 +1,2 @@
+This repository implements a local CLI script and does not provide a GUI workflow for end-user feedback capture.
+No in-application feedback screenshot is applicable for this project scope.
