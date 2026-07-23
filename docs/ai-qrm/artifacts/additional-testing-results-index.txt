@@ -1,7 +1,0 @@
-Additional material test artifacts available in-repo:
-
-- /questions_and_answers.md
-- /response_zero_shot_1748891202.609052.json
-- /response_few_shot_1748891217.3069377.json
-
-No separate jailbreak, hallucination benchmark suite, or UAT dashboard artifact is currently maintained in this repository.

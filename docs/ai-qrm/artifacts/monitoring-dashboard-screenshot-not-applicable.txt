@@ -1,2 +1,0 @@
-This repository has no deployed monitoring dashboard service or tracker UI.
-Monitoring evidence is file-based via response JSON artifacts and markdown logs.

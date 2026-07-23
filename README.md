@@ -114,3 +114,8 @@ Each output entry includes:
 
 See full examples in [`questions_and_answers.md`](./questions_and_answers.md).  
 In the recorded runs, few-shot prompting is generally more reliable on joins and aggregate-style questions.
+
+## Additional Documentation
+
+- [`docs/project-context.md`](./docs/project-context.md) - intended usage, users, non-goals, and operational context
+- [`docs/evaluation-notes.md`](./docs/evaluation-notes.md) - evaluation inputs/outputs and current process limits

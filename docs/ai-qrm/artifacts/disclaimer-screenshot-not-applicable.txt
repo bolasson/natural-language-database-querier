@@ -1,2 +1,0 @@
-This repository implements a local CLI script and does not provide a GUI location where an AI disclaimer banner/modal could appear.
-No disclaimer placement screenshot is applicable for this project scope.
